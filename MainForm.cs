@@ -88,7 +88,16 @@ public partial class MainForm : Form
             using (var fs = new FileStream(currentExe, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 fs.Seek(_zipOffset, SeekOrigin.Begin);
-                using (var zip = new ZipArchive(fs, ZipArchiveMode.Read))
+                
+                // Fix: Copy to MemoryStream to ensure Zip Offset 0 matches Stream Position 0
+                // .NET ZipArchive expects local file headers to be at the relative offsets specified in Central Directory.
+                // When embedded, these offsets are wrong relative to the FS start.
+                var payloadSize = fs.Length - 8 - _zipOffset;
+                var payloadBytes = new byte[payloadSize];
+                fs.ReadExactly(payloadBytes, 0, (int)payloadSize);
+                
+                using (var ms = new MemoryStream(payloadBytes))
+                using (var zip = new ZipArchive(ms, ZipArchiveMode.Read))
                 {
                     var configEntry = zip.GetEntry("appsettings.json");
                     if (configEntry != null)
@@ -225,7 +234,12 @@ public partial class MainForm : Form
                 using (var fs = new FileStream(currentExe, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
                     fs.Seek(_zipOffset, SeekOrigin.Begin);
-                    using (var zip = new ZipArchive(fs, ZipArchiveMode.Read))
+                    var payloadSize = fs.Length - 8 - _zipOffset;
+                    var payloadBytes = new byte[payloadSize];
+                    fs.ReadExactly(payloadBytes, 0, (int)payloadSize);
+
+                    using (var ms = new MemoryStream(payloadBytes))
+                    using (var zip = new ZipArchive(ms, ZipArchiveMode.Read))
                     {
                         zip.ExtractToDirectory(tempDir);
                     }
