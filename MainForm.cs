@@ -113,7 +113,7 @@ public partial class MainForm : Form
             {
                 var node = JsonNode.Parse(File.ReadAllText(configPath));
                 _tenantApiKey = node?["TenantApiKey"]?.ToString() ?? "";
-                _backendUrl = node?["BackendUrl"]?.ToString() ?? "http://localhost:5140";
+                _backendUrl = node?["BackendUrl"]?.ToString() ?? "https://192.168.1.10:7033";
             }
             Directory.Delete(tempDir, true);
 
